@@ -1,41 +1,46 @@
 package me.son.springwebsocketchat.chat.controller;
 
 import lombok.RequiredArgsConstructor;
-import me.son.springwebsocketchat.chat.domain.entity.Message;
-import me.son.springwebsocketchat.chat.domain.repository.MessageRepository;
-import me.son.springwebsocketchat.chat.dto.ChatMessageRequest;
-import me.son.springwebsocketchat.chat.dto.ChatMessageResponse;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import me.son.springwebsocketchat.chat.domain.entity.ChatRoom;
+import me.son.springwebsocketchat.chat.domain.service.ChatRoomService;
 import org.springframework.stereotype.Controller;
-
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
 public class ChatPageController {
 
-    private final MessageRepository messageRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatRoomService chatRoomService;
 
-    @MessageMapping("/chat.send")
-    public void send(ChatMessageRequest request, Principal principal) {
-        Message message = Message.builder()
-                .roomId(request.roomId())
-                .sender(principal.getName())
-                .content(request.content())
-                .build();
+    // 채팅방 목록 페이지
+    @GetMapping("/chat")
+    public String chatList(Model model, Principal principal) {
+        List<ChatRoom> rooms = chatRoomService.findRoomsByUsername(principal.getName());
+        model.addAttribute("rooms", rooms);
+        return "chat-list";
+    }
 
-        messageRepository.save(message);
+    // 채팅방 생성
+    @PostMapping("/chat/rooms")
+    public String createRoom(@RequestParam String name, Principal principal) {
+        chatRoomService.createRoom(name, principal.getName());
+        return "redirect:/chat";
+    }
 
-        messagingTemplate.convertAndSend(
-                "/topic/room." + request.roomId(),
-                new ChatMessageResponse(
-                        message.getSender(),
-                        message.getContent(),
-                        request.roomId()
-                )
-        );
+    // 실제 채팅방 페이지
+    @GetMapping("/chat/{roomId}")
+    public String chatRoom(@PathVariable Long roomId, Principal principal, Model model) {
+
+        // 접근 권한 체크
+        if (!chatRoomService.isMember(roomId, principal.getName())) {
+            return "redirect:/chat";
+        }
+
+        model.addAttribute("roomId", roomId);
+        return "chat-room";
     }
 }

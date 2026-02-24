@@ -29,6 +29,12 @@
 <!-- 채팅방 목록 -->
 <div id="room-list">
     <h3>내 채팅방</h3>
+
+    <form method="post" th:action="@{/chat/rooms}">
+        <input type="text" name="name" placeholder="채팅방 이름" required />
+        <button type="submit">생성</button>
+    </form>
+
     <ul>
         <li th:each="room : ${rooms}"
             th:data-room-id="${room.id}"
