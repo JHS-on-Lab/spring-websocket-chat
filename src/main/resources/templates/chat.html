@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+<script>
+  const socket = new SockJS('/ws');
+  const stompClient = Stomp.over(socket);
+
+  stompClient.connect({}, function () {
+      console.log("Connected");
+
+      stompClient.subscribe('/topic/room.1', function (message) {
+          console.log("Received:", JSON.parse(message.body));
+      });
+
+      stompClient.send("/app/chat.send", {}, JSON.stringify({
+          roomId: 1,
+          content: "hello"
+      }));
+  });
+</script>
+</body>
+</html>
